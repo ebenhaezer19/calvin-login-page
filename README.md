@@ -57,7 +57,7 @@ This is a **replica of the LMS Calvin Institute of Technology login page** desig
 
 1. **Clone/Download this repository**
    ```bash
-   git clone https://github.com/ebenhaezer19/calvin-login-page.git
+   git clone https://github.com/ebenhaezer19/PhissTrain.git
    cd calvin-login-page
    ```
 
