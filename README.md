@@ -367,8 +367,12 @@ $reporting_rate = ($reports / $attempts) * 100;
 - **Documentation**: Check this README first
 - **Community**: Join security awareness forums
 
+BlackLine Channel Telegram (@BlackLineGroup)
+<img width="379" height="920" alt="image" src="https://github.com/user-attachments/assets/ee72f75c-5dc0-4533-ad38-68288372df27" />
+
+
 ### Legal & Ethical Questions
-- **Compliance Officer**: legal@organization.com
+- **Compliance Officer**: krisoprasebenhaezer@gmail.com
 - **Ethics Committee**: ethics@organization.com
 - **Security Team**: security@organization.com
 
